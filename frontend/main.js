@@ -1,3 +1,40 @@
+document.addEventListener("DOMContentLoaded", () => {
+  loadPublicaciones();
+
+  const form = document.getElementById("form-publicacion");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const contenido = document.getElementById("contenido").value;
+    const usuario_id = 1; // temporal: reemplaza con el ID real del usuario autenticado
+    await fetch("/api/publicaciones", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usuario_id, contenido })
+    });
+    document.getElementById("contenido").value = "";
+    loadPublicaciones();
+  });
+});
+
+async function loadPublicaciones() {
+  const res = await fetch("/api/publicaciones");
+  const publicaciones = await res.json();
+  const contenedor = document.getElementById("feed");
+  contenedor.innerHTML = "";
+  publicaciones.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "publicacion";
+    div.innerHTML = `
+      <h4>${p.nombre} ${p.apellido}</h4>
+      <p>${p.contenido}</p>
+      <small>${new Date(p.fecha_publicacion).toLocaleString()}</small>
+    `;
+    contenedor.appendChild(div);
+  });
+}
+
+
+
 // ================== MENU ACTIVO ==================
 const menuItems = document.querySelectorAll('.menu-item');
 
