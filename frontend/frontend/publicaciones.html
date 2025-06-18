@@ -588,11 +588,11 @@
                     
                     <div class="post-actions">
                         <div class="post-stats">
-                            <span><i class="fas fa-heart"></i> ${post.likes || 0} Me gusta</span>
-                            <span><i class="fas fa-comment"></i> ${post.comentarios || 0} Comentarios</span>
+                            <span><i class="fas fa-heart"></i> <span id="like-stat-count-${post.id}">${post.likes || 0}</span> Me gusta</span>
+                            <span><i class="fas fa-comment"></i> <span id="comment-count-${post.id}">${post.comentarios || 0}</span> Comentarios</span>
                         </div>
                         <div class="post-buttons">
-                            <button class="post-btn ${post.user_liked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
+                            <button class="post-btn" onclick="toggleLike(${post.id})"> {/* .liked class will be managed by loadLikeData */}
                                 <i class="fas fa-heart"></i> Me gusta
                             </button>
                             <button class="post-btn" onclick="toggleComments(${post.id})">
@@ -603,8 +603,77 @@
                             </button>
                         </div>
                     </div>
+                    <div class="post-comments-container" id="comments-for-post-${post.id}" style="margin-top: 1rem; border-top: 1px solid var(--color-light); padding-top: 1rem;">
+                        <!-- Los comentarios se cargarán aquí -->
+                    </div>
                 </div>
             `).join('');
+
+            // Cargar comentarios para cada post
+            postsData.forEach(post => {
+                const commentsContainer = document.getElementById(`comments-for-post-${post.id}`);
+                if (commentsContainer) {
+                    loadComments(post.id, commentsContainer);
+                }
+                // Cargar datos de likes para cada post
+                const postElement = document.querySelector(`[data-post-id="${post.id}"]`);
+                if (postElement) {
+                    loadLikeData(post.id, postElement);
+                }
+            });
+        }
+
+        // Cargar comentarios para una publicación
+        async function loadComments(postId, commentsContainer) {
+            commentsContainer.innerHTML = '<div class="loading"><div class="spinner" style="width: 20px; height: 20px;"></div></div>'; // Indicador de carga más pequeño
+            try {
+                const response = await fetch(`${API_BASE_URL}/publicaciones/${postId}/comentarios`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const comments = await response.json();
+
+                commentsContainer.innerHTML = ''; // Limpiar el indicador de carga
+
+                if (comments.length === 0) {
+                    commentsContainer.innerHTML = '<p style="font-size: 0.9rem; color: var(--color-muted); text-align: center;">No hay comentarios aún. ¡Sé el primero!</p>';
+                } else {
+                    comments.forEach(comment => {
+                        const commentElement = document.createElement('div');
+                        commentElement.className = 'comment-item';
+                        commentElement.style.marginBottom = '0.75rem';
+                        commentElement.style.fontSize = '0.9rem';
+
+                        const userAvatar = document.createElement('span');
+                        userAvatar.className = 'post-user-avatar';
+                        userAvatar.style.width = '30px';
+                        userAvatar.style.height = '30px';
+                        userAvatar.style.fontSize = '0.8rem';
+                        userAvatar.style.marginRight = '0.5rem';
+                        userAvatar.textContent = comment.nombre ? comment.nombre.charAt(0).toUpperCase() : 'U';
+
+                        const commentContent = document.createElement('span');
+                        commentContent.innerHTML = `
+                            <strong style="color: var(--color-primary);">${comment.nombre} ${comment.apellido || ''}:</strong>
+                            ${comment.contenido}
+                            <small style="color: var(--color-muted); margin-left: 0.5rem;">(${formatDate(comment.fecha_comentario)})</small>
+                        `;
+
+                        commentElement.appendChild(userAvatar);
+                        commentElement.appendChild(commentContent);
+                        commentsContainer.appendChild(commentElement);
+                    });
+                }
+                // Actualizar el contador de comentarios en las estadísticas del post
+                const commentCountElement = document.getElementById(`comment-count-${postId}`);
+                if (commentCountElement) {
+                    commentCountElement.textContent = comments.length;
+                }
+
+            } catch (error) {
+                console.error(`Error cargando comentarios para post ${postId}:`, error);
+                commentsContainer.innerHTML = '<p style="font-size: 0.9rem; color: var(--color-danger); text-align: center;">Error al cargar comentarios.</p>';
+            }
         }
 
         // Crear nueva publicación usando tu endpoint
@@ -630,7 +699,7 @@
 
                 if (response.ok) {
                     document.getElementById('newPostContent').value = '';
-                    loadPosts(); // Recargar publicaciones
+                    loadPosts(); // Recargar publicaciones, esto implicitamente llamará a loadComments para cada post.
                     alert('¡Publicación creada exitosamente!');
                 } else {
                     throw new Error('Error al crear la publicación');
@@ -670,6 +739,13 @@
 
         // Dar/quitar like usando tu endpoint
         async function toggleLike(postId) {
+            const currentUserId = getCurrentUserId();
+            if (!currentUserId) {
+                alert('Debes iniciar sesión para dar "Me gusta".');
+                // Podrías redirigir al login: window.location.href = 'login.html';
+                return;
+            }
+
             try {
                 const response = await fetch(`${API_BASE_URL}/likes`, {
                     method: 'POST',
@@ -677,49 +753,95 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        usuario_id: getCurrentUserId(),
+                        usuario_id: currentUserId,
                         publicacion_id: postId
                     })
                 });
 
                 if (response.ok) {
-                    // Actualizar visualmente el botón de like
-                    const likeBtn = document.querySelector(`[data-post-id="${postId}"] .post-btn`);
-                    if (likeBtn) {
-                        likeBtn.classList.toggle('liked');
+                    // Respuesta del backend es "Like registrado" o similar, no el estado actual.
+                    // Por eso, llamamos a loadLikeData para obtener el estado más reciente.
+                    const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+                    if (postElement) {
+                        await loadLikeData(postId, postElement);
                     }
-                    console.log('Like registrado');
                 } else {
-                    console.log('Error al dar like o el like ya existe');
+                    // Intentar obtener un mensaje de error del backend
+                    const errorData = await response.json().catch(() => null);
+                    const errorMessage = errorData && errorData.message ? errorData.message : 'Error al procesar el "Me gusta".';
+                    console.error('Error en toggleLike:', errorMessage);
+                    // Opcionalmente, mostrar un error al usuario
+                    // alert(`Error: ${errorMessage}`);
                 }
             } catch (error) {
                 console.error('Error al dar like:', error);
+                // alert('Error de red al intentar dar "Me gusta".');
             }
         }
 
-        // Mostrar formulario de comentarios
+        // Cargar datos de Likes para una publicación
+        async function loadLikeData(postId, postElement) {
+            if (!postElement) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/publicaciones/${postId}/likes`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const likeData = await response.json(); // Espera { like_count: X, users_liked: [...] }
+
+                // Actualizar el contador de likes
+                const likeCountSpan = postElement.querySelector(`#like-stat-count-${postId}`);
+                if (likeCountSpan) {
+                    likeCountSpan.textContent = likeData.like_count || 0;
+                }
+
+                // Actualizar el botón de like
+                const likeButton = postElement.querySelector(`.post-btn[onclick*="toggleLike(${postId})"]`);
+                if (likeButton) {
+                    const currentUserId = getCurrentUserId();
+                    const userHasLiked = likeData.users_liked.some(user => user.usuario_id === currentUserId);
+
+                    if (userHasLiked) {
+                        likeButton.classList.add('liked');
+                    } else {
+                        likeButton.classList.remove('liked');
+                    }
+                }
+            } catch (error) {
+                console.error(`Error cargando datos de likes para post ${postId}:`, error);
+                // Opcional: Mostrar un pequeño error en la UI del post específico
+                const likeCountSpan = postElement.querySelector(`#like-stat-count-${postId}`);
+                if (likeCountSpan) {
+                    likeCountSpan.textContent = 'Error';
+                }
+            }
+        }
+
+
+        // Mostrar/Ocultar formulario de comentarios
         function toggleComments(postId) {
             const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-            let commentsSection = postElement.querySelector('.comments-section');
-            
-            if (commentsSection) {
-                commentsSection.remove();
-                return;
-            }
+            if (!postElement) return;
 
-            commentsSection = document.createElement('div');
-            commentsSection.className = 'comments-section';
-            commentsSection.innerHTML = `
-                <div style="border-top: 1px solid var(--color-light); padding-top: 1rem; margin-top: 1rem;">
+            let commentFormContainer = postElement.querySelector('.comment-form-container');
+
+            if (commentFormContainer) {
+                commentFormContainer.remove();
+            } else {
+                commentFormContainer = document.createElement('div');
+                commentFormContainer.className = 'comment-form-container';
+                commentFormContainer.style.marginTop = '1rem';
+                commentFormContainer.innerHTML = `
                     <div style="display: flex; gap: 1rem; align-items: flex-start;">
-                        <div class="post-user-avatar" style="width: 35px; height: 35px; font-size: 0.9rem;">
-                            ${currentUser.nombre ? currentUser.nombre.charAt(0).toUpperCase() : 'U'}
+                        <div class="post-user-avatar" style="width: 35px; height: 35px; font-size: 0.9rem; background-color: var(--color-primary); color: white; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                            ${currentUser && currentUser.nombre ? currentUser.nombre.charAt(0).toUpperCase() : 'U'}
                         </div>
                         <div style="flex: 1;">
                             <textarea 
                                 placeholder="Escribe un comentario..." 
                                 style="width: 100%; padding: 0.8rem; border: 1px solid var(--color-light); border-radius: var(--border-radius); resize: vertical; min-height: 60px;"
-                                id="comment-${postId}"
+                                id="comment-input-${postId}"
                             ></textarea>
                             <button 
                                 onclick="createComment(${postId})" 
@@ -730,15 +852,26 @@
                             </button>
                         </div>
                     </div>
-                </div>
-            `;
-            
-            postElement.appendChild(commentsSection);
+                `;
+                // Insertar el formulario después del contenedor de comentarios existentes
+                const commentsContainer = postElement.querySelector(`#comments-for-post-${postId}`);
+                if (commentsContainer) {
+                    commentsContainer.insertAdjacentElement('afterend', commentFormContainer);
+                    document.getElementById(`comment-input-${postId}`).focus();
+                } else { // Como fallback si el contenedor de comentarios no existe por alguna razón
+                    postElement.appendChild(commentFormContainer);
+                    document.getElementById(`comment-input-${postId}`).focus();
+                }
+            }
         }
 
         // Crear comentario usando tu endpoint
         async function createComment(postId) {
-            const commentInput = document.getElementById(`comment-${postId}`);
+            const commentInput = document.getElementById(`comment-input-${postId}`);
+            if (!commentInput) {
+                console.error('No se encontró el input del comentario para el post:', postId);
+                return;
+            }
             const content = commentInput.value.trim();
             
             if (!content) {
@@ -760,15 +893,32 @@
                 });
 
                 if (response.ok) {
-                    commentInput.value = '';
+                    commentInput.value = ''; // Limpiar el input
+                    // Opcionalmente, cerrar el formulario de comentario
+                    const commentFormContainer = document.querySelector(`[data-post-id="${postId}"] .comment-form-container`);
+                    if (commentFormContainer) {
+                        // commentFormContainer.remove(); // Descomentar si se quiere cerrar el form después de comentar
+                    }
+
+                    // Recargar los comentarios para este post específico
+                    const commentsContainer = document.getElementById(`comments-for-post-${postId}`);
+                    if (commentsContainer) {
+                        await loadComments(postId, commentsContainer);
+                    } else {
+                        // Si el contenedor no se encuentra, recargar todos los posts podría ser una alternativa,
+                        // aunque es menos eficiente.
+                        console.warn(`Contenedor de comentarios comments-for-post-${postId} no encontrado. Considera recargar todos los posts.`);
+                        // loadPosts();
+                    }
                     alert('¡Comentario guardado exitosamente!');
-                    toggleComments(postId); // Cerrar el formulario
+
                 } else {
-                    throw new Error('Error al crear el comentario');
+                    const errorData = await response.json().catch(() => ({ message: 'Error desconocido al crear el comentario' }));
+                    throw new Error(errorData.message || 'Error al crear el comentario');
                 }
             } catch (error) {
                 console.error('Error creando comentario:', error);
-                alert('Error al crear el comentario. Inténtalo de nuevo.');
+                alert(`Error al crear el comentario: ${error.message}`);
             }
         }
 

@@ -18,15 +18,51 @@ async function loadPublicaciones() {
       <h4>${pub.nombre} ${pub.apellido}</h4>
       <p>${pub.contenido}</p>
       <small>${new Date(pub.fecha_publicacion).toLocaleString()}</small>
-      <button onclick="darLike(${pub.id})">👍 Like</button>
-      <form onsubmit="comentar(event, ${pub.id})">
-        <input type="text" placeholder="Comenta..." required>
-        <button>Comentar</button>
+      <div class="post-stats" style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
+        <button onclick="darLike(${pub.id})" id="like-button-main-${pub.id}" class="like-btn">👍 Like</button>
+        (<span id="like-count-main-${pub.id}">0</span>) |
+        Comments: <span id="comment-count-main-${pub.id}">0</span>
+      </div>
+      <form onsubmit="comentar(event, ${pub.id})" class="comment-form">
+        <input type="text" placeholder="Escribe un comentario..." required>
+        <button type="submit">Comentar</button>
       </form>
-      <div id="comentarios-${pub.id}"></div>
+      <div id="comentarios-${pub.id}" class="comments-container"></div>
     `;
     contenedor.appendChild(div);
-    await cargarComentarios(pub.id);
+    // Cargar datos de likes y comentarios
+    await loadLikeDataForPost(pub.id);
+    await cargarComentarios(pub.id); // Esto también actualizará el contador de comentarios
+  }
+}
+
+async function loadLikeDataForPost(publicacion_id) {
+  try {
+    const res = await fetch(`/api/publicaciones/${publicacion_id}/likes`);
+    if (!res.ok) {
+      console.error(`Error fetching likes for post ${publicacion_id}: ${res.status}`);
+      return;
+    }
+    const likeData = await res.json(); // { like_count: X, users_liked: [...] }
+
+    const likeCountElement = document.getElementById(`like-count-main-${publicacion_id}`);
+    if (likeCountElement) {
+      likeCountElement.textContent = likeData.like_count || 0;
+    }
+
+    const likeButtonElement = document.getElementById(`like-button-main-${publicacion_id}`);
+    if (likeButtonElement) {
+      const userHasLiked = likeData.users_liked.some(u => u.usuario_id === user.id);
+      if (userHasLiked) {
+        likeButtonElement.textContent = '❤️ Liked';
+        likeButtonElement.classList.add('liked');
+      } else {
+        likeButtonElement.textContent = '👍 Like';
+        likeButtonElement.classList.remove('liked');
+      }
+    }
+  } catch (error) {
+    console.error(`Error in loadLikeDataForPost for post ${publicacion_id}:`, error);
   }
 }
 
@@ -54,6 +90,8 @@ async function darLike(publicacion_id) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ usuario_id: user.id, publicacion_id })
   });
+  // Recargar datos de likes para el post específico para actualizar UI
+  await loadLikeDataForPost(publicacion_id);
 }
 
 // ================== COMENTAR ==================
@@ -72,15 +110,55 @@ async function comentar(e, publicacion_id) {
 
 // ================== CARGAR COMENTARIOS ==================
 async function cargarComentarios(publicacion_id) {
-  const res = await fetch(`/api/comentarios/${publicacion_id}`);
-  const comentarios = await res.json();
-  const contenedor = document.getElementById(`comentarios-${publicacion_id}`);
-  contenedor.innerHTML = "";
-  comentarios.forEach(c => {
-    const div = document.createElement("div");
-    div.innerHTML = `<small><strong>${c.nombre}</strong>: ${c.contenido}</small>`;
-    contenedor.appendChild(div);
-  });
+  try {
+    const res = await fetch(`/api/publicaciones/${publicacion_id}/comentarios`); // URL actualizada
+    if (!res.ok) {
+      console.error(`Error fetching comments for post ${publicacion_id}: ${res.status}`);
+      const commentContainer = document.getElementById(`comentarios-${publicacion_id}`);
+      if (commentContainer) {
+        commentContainer.innerHTML = "<small>Error al cargar comentarios.</small>";
+      }
+      // Actualizar contador a 0 o 'Error' en caso de fallo
+      const commentCountElement = document.getElementById(`comment-count-main-${publicacion_id}`);
+      if (commentCountElement) {
+          commentCountElement.textContent = 'Error';
+      }
+      return;
+    }
+    const comentarios = await res.json(); // Array de comentarios {id, contenido, fecha_comentario, nombre, apellido}
+
+    const contenedor = document.getElementById(`comentarios-${publicacion_id}`);
+    if (!contenedor) return;
+
+    contenedor.innerHTML = ""; // Limpiar comentarios anteriores
+    if (comentarios.length === 0) {
+      contenedor.innerHTML = "<small>No hay comentarios aún.</small>";
+    } else {
+      comentarios.forEach(c => {
+        const div = document.createElement("div");
+        div.className = "comment-item"; // Para posible estilizado
+        div.innerHTML = `<small><strong>${c.nombre} ${c.apellido || ''}</strong>: ${c.contenido}</small>`;
+        contenedor.appendChild(div);
+      });
+    }
+
+    // Actualizar el contador de comentarios
+    const commentCountElement = document.getElementById(`comment-count-main-${publicacion_id}`);
+    if (commentCountElement) {
+      commentCountElement.textContent = comentarios.length;
+    }
+
+  } catch (error) {
+    console.error(`Error in cargarComentarios for post ${publicacion_id}:`, error);
+    const commentContainer = document.getElementById(`comentarios-${publicacion_id}`);
+    if (commentContainer) {
+        commentContainer.innerHTML = "<small>Error al cargar comentarios.</small>";
+    }
+    const commentCountElement = document.getElementById(`comment-count-main-${publicacion_id}`);
+    if (commentCountElement) {
+        commentCountElement.textContent = 'Error';
+    }
+  }
 }
 
 

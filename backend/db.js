@@ -1,3 +1,5 @@
+// This file is currently not in use. All database operations are handled directly in server.js.
+/*
 const sql = require('msnodesqlv8');
 
 const connectionString = "server=localhost\\SQLEXPRESS;Database=TuNombreDeBaseDeDatos;Trusted_Connection=Yes;Driver={SQL Server Native Client 11.0}";
@@ -10,3 +12,4 @@ const query = (sqlQuery, callback) => {
 };
 
 module.exports = query;
+*/
