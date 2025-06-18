@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Social - Mis Publicaciones</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+        :root {
+            --color-primary: #6c63ff;
+            --color-secondary: #f3f3f3;
+            --color-white: #fff;
+            --color-light: #f5f6fa;
+            --color-gray: #b0b3b8;
+            --color-dark: #222;
+            --color-muted: #888;
+            --color-danger: #ff4d4f;
+            --color-success: #52c41a;
+            --border-radius: 1.5rem;
+            --card-radius: 1.2rem;
+            --transition: all 0.3s cubic-bezier(.4,0,.2,1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--color-light);
+            color: var(--color-dark);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            background: var(--color-white);
+            border-radius: var(--card-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            text-align: center;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .profile-cover {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: var(--card-radius);
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .profile-picture-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid var(--color-white);
+            position: absolute;
+            bottom: -60px;
+            left: 2rem;
+            background: var(--color-gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: var(--color-white);
+        }
+
+        .profile-info {
+            margin-left: 160px;
+            margin-top: 2rem;
+            text-align: left;
+        }
+
+        .profile-info h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--color-dark);
+        }
+
+        .profile-info p {
+            color: var(--color-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--color-light);
+        }
+
+        .nav-tab {
+            padding: 1rem 0;
+            color: var(--color-muted);
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: var(--transition);
+        }
+
+        .nav-tab.active {
+            color: var(--color-primary);
+            border-bottom: 2px solid var(--color-primary);
+        }
+
+        /* Posts Container */
+        .posts-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+        }
+
+        /* Sidebar */
+        .sidebar-info {
+            background: var(--color-white);
+            border-radius: var(--card-radius);
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            height: fit-content;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid var(--color-light);
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-item i {
+            color: var(--color-primary);
+            font-size: 1.2rem;
+        }
+
+        /* Posts Feed */
+        .posts-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .create-post {
+            background: var(--color-white);
+            border-radius: var(--card-radius);
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .create-post-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .create-post-input {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid var(--color-light);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .create-post-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--color-light);
+        }
+
+        .post-options {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .post-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .post-option:hover {
+            background: var(--color-light);
+        }
+
+        .btn {
+            padding: 0.8rem 2rem;
+            border-radius: var(--border-radius);
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: var(--color-white);
+        }
+
+        .btn:hover {
+            opacity: 0.85;
+        }
+
+        /* Post */
+        .post {
+            background: var(--color-white);
+            border-radius: var(--card-radius);
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .post-user {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .post-user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-white);
+            font-weight: 600;
+        }
+
+        .post-user-info h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .post-user-info small {
+            color: var(--color-muted);
+        }
+
+        .post-menu {
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .post-menu:hover {
+            background: var(--color-light);
+        }
+
+        .post-content {
+            margin-bottom: 1rem;
+        }
+
+        .post-content p {
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .post-image {
+            width: 100%;
+            border-radius: var(--card-radius);
+            margin-bottom: 1rem;
+        }
+
+        .post-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid var(--color-light);
+        }
+
+        .post-stats {
+            display: flex;
+            gap: 1rem;
+            color: var(--color-muted);
+            font-size: 0.9rem;
+        }
+
+        .post-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .post-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            background: transparent;
+            color: var(--color-muted);
+        }
+
+        .post-btn:hover {
+            background: var(--color-light);
+        }
+
+        .post-btn.liked {
+            color: var(--color-danger);
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--color-light);
+            border-top: 4px solid var(--color-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .posts-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar-info {
+                order: 2;
+            }
+            
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .profile-picture-large {
+                position: static;
+                margin: 0 auto 1rem;
+            }
+            
+            .profile-info {
+                margin-left: 0;
+                margin-top: 0;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Profile -->
+        <div class="header">
+            <div class="profile-cover">
+                <div class="profile-picture-large">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+            <div class="profile-info">
+                <h1 id="userName">Usuario</h1>
+                <p id="userBio">Bienvenido a mi perfil</p>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <div class="nav-tab active">
+                <i class="fas fa-list"></i> Publicaciones
+            </div>
+            <div class="nav-tab">
+                <i class="fas fa-info-circle"></i> Información
+            </div>
+            <div class="nav-tab">
+                <i class="fas fa-images"></i> Fotos
+            </div>
+        </div>
+
+        <!-- Posts Container -->
+        <div class="posts-container">
+            <!-- Sidebar Info -->
+            <div class="sidebar-info">
+                <h3 style="margin-bottom: 1rem; color: var(--color-primary);">
+                    <i class="fas fa-info-circle"></i> Información
+                </h3>
+                <div class="info-item">
+                    <i class="fas fa-envelope"></i>
+                    <span id="userEmail">usuario@email.com</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-calendar"></i>
+                    <span id="userJoinDate">Se unió en 2024</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span id="postCount">0 publicaciones</span>
+                </div>
+            </div>
+
+            <!-- Posts Feed -->
+            <div class="posts-feed">
+                <!-- Create Post -->
+                <div class="create-post">
+                    <div class="create-post-header">
+                        <div class="post-user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h3>¿Qué estás pensando?</h3>
+                    </div>
+                    <textarea class="create-post-input" id="newPostContent" placeholder="Escribe algo..."></textarea>
+                    <div class="create-post-actions">
+                        <div class="post-options">
+                            <div class="post-option">
+                                <i class="fas fa-image" style="color: #45bd62;"></i>
+                                <span>Foto</span>
+                            </div>
+                            <div class="post-option">
+                                <i class="fas fa-video" style="color: #f02849;"></i>
+                                <span>Video</span>
+                            </div>
+                            <div class="post-option">
+                                <i class="fas fa-smile" style="color: #f7b928;"></i>
+                                <span>Sentimientos</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="createPost()">Publicar</button>
+                    </div>
+                </div>
+
+                <!-- Posts List -->
+                <div id="postsContainer">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración de la API
+        const API_BASE_URL = 'http://localhost:3000/api';
+        let currentUser = null;
+        let posts = [];
+
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+            loadPosts();
+        });
+
+        // Cargar datos del usuario desde localStorage (después del login)
+        function loadUserData() {
+            try {
+                const userData = localStorage.getItem('userData');
+                if (userData) {
+                    currentUser = JSON.parse(userData);
+                    updateUserProfile(currentUser);
+                } else {
+                    // Usuario por defecto si no hay datos guardados
+                    currentUser = {
+                        id: 1,
+                        nombre: 'Usuario',
+                        apellido: 'Ejemplo',
+                        email: 'usuario@ejemplo.com'
+                    };
+                    updateUserProfile(currentUser);
+                }
+            } catch (error) {
+                console.error('Error cargando datos del usuario:', error);
+            }
+        }
+
+        // Actualizar perfil del usuario en la UI
+        function updateUserProfile(user) {
+            document.getElementById('userName').textContent = `${user.nombre} ${user.apellido}` || 'Usuario';
+            document.getElementById('userEmail').textContent = user.email || 'usuario@email.com';
+            document.getElementById('userBio').textContent = 'Bienvenido a mi perfil';
+            document.getElementById('userJoinDate').textContent = 'Se unió en 2024';
+        }
+
+        // Cargar publicaciones usando tu endpoint existente
+        async function loadPosts() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/publicaciones`);
+                
+                if (response.ok) {
+                    posts = await response.json();
+                    renderPosts(posts);
+                    updatePostCount(posts.length);
+                } else {
+                    throw new Error('Error al cargar publicaciones');
+                }
+            } catch (error) {
+                console.error('Error cargando publicaciones:', error);
+                document.getElementById('postsContainer').innerHTML = `
+                    <div class="post">
+                        <p style="text-align: center; color: var(--color-muted);">
+                            Error al cargar las publicaciones. 
+                            <button onclick="loadPosts()" class="btn btn-primary" style="margin-left: 1rem;">Reintentar</button>
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
+        // Renderizar publicaciones con la estructura de tu BD
+        function renderPosts(postsData) {
+            const container = document.getElementById('postsContainer');
+            
+            if (postsData.length === 0) {
+                container.innerHTML = `
+                    <div class="post">
+                        <div style="text-align: center; padding: 2rem;">
+                            <i class="fas fa-pen-alt" style="font-size: 3rem; color: var(--color-muted); margin-bottom: 1rem;"></i>
+                            <h3 style="color: var(--color-muted); margin-bottom: 0.5rem;">No hay publicaciones aún</h3>
+                            <p style="color: var(--color-muted);">¡Crea tu primera publicación para compartir con tus amigos!</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = postsData.map(post => `
+                <div class="post" data-post-id="${post.id}">
+                    <div class="post-header">
+                        <div class="post-user">
+                            <div class="post-user-avatar">
+                                ${post.nombre ? post.nombre.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                            <div class="post-user-info">
+                                <h4>${post.nombre} ${post.apellido || ''}</h4>
+                                <small>${formatDate(post.fecha_publicacion)}</small>
+                            </div>
+                        </div>
+                        <div class="post-menu" onclick="togglePostMenu(${post.id})">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="post-content">
+                        <p>${post.contenido}</p>
+                    </div>
+                    
+                    <div class="post-actions">
+                        <div class="post-stats">
+                            <span><i class="fas fa-heart"></i> ${post.likes || 0} Me gusta</span>
+                            <span><i class="fas fa-comment"></i> ${post.comentarios || 0} Comentarios</span>
+                        </div>
+                        <div class="post-buttons">
+                            <button class="post-btn ${post.user_liked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
+                                <i class="fas fa-heart"></i> Me gusta
+                            </button>
+                            <button class="post-btn" onclick="toggleComments(${post.id})">
+                                <i class="fas fa-comment"></i> Comentar
+                            </button>
+                            <button class="post-btn" onclick="sharePost(${post.id})">
+                                <i class="fas fa-share"></i> Compartir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Crear nueva publicación usando tu endpoint
+        async function createPost() {
+            const content = document.getElementById('newPostContent').value.trim();
+            
+            if (!content) {
+                alert('Por favor, escribe algo antes de publicar.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/publicaciones`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        usuario_id: getCurrentUserId(),
+                        contenido: content
+                    })
+                });
+
+                if (response.ok) {
+                    document.getElementById('newPostContent').value = '';
+                    loadPosts(); // Recargar publicaciones
+                    alert('¡Publicación creada exitosamente!');
+                } else {
+                    throw new Error('Error al crear la publicación');
+                }
+            } catch (error) {
+                console.error('Error creando publicación:', error);
+                alert('Error al crear la publicación. Inténtalo de nuevo.');
+            }
+        }
+
+        // Formatear fecha
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 1) return 'Hace 1 día';
+            if (diffDays < 7) return `Hace ${diffDays} días`;
+            if (diffDays < 30) return `Hace ${Math.ceil(diffDays / 7)} semanas`;
+            return date.toLocaleDateString('es-ES');
+        }
+
+        // Actualizar contador de publicaciones
+        function updatePostCount(count) {
+            document.getElementById('postCount').textContent = `${count} publicaciones`;
+        }
+
+        // Obtener ID del usuario actual
+        function getCurrentUserId() {
+            if (currentUser && currentUser.id) {
+                return currentUser.id;
+            }
+            // Valor por defecto para testing
+            return 1;
+        }
+
+        // Dar/quitar like usando tu endpoint
+        async function toggleLike(postId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/likes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        usuario_id: getCurrentUserId(),
+                        publicacion_id: postId
+                    })
+                });
+
+                if (response.ok) {
+                    // Actualizar visualmente el botón de like
+                    const likeBtn = document.querySelector(`[data-post-id="${postId}"] .post-btn`);
+                    if (likeBtn) {
+                        likeBtn.classList.toggle('liked');
+                    }
+                    console.log('Like registrado');
+                } else {
+                    console.log('Error al dar like o el like ya existe');
+                }
+            } catch (error) {
+                console.error('Error al dar like:', error);
+            }
+        }
+
+        // Mostrar formulario de comentarios
+        function toggleComments(postId) {
+            const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+            let commentsSection = postElement.querySelector('.comments-section');
+            
+            if (commentsSection) {
+                commentsSection.remove();
+                return;
+            }
+
+            commentsSection = document.createElement('div');
+            commentsSection.className = 'comments-section';
+            commentsSection.innerHTML = `
+                <div style="border-top: 1px solid var(--color-light); padding-top: 1rem; margin-top: 1rem;">
+                    <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                        <div class="post-user-avatar" style="width: 35px; height: 35px; font-size: 0.9rem;">
+                            ${currentUser.nombre ? currentUser.nombre.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                        <div style="flex: 1;">
+                            <textarea 
+                                placeholder="Escribe un comentario..." 
+                                style="width: 100%; padding: 0.8rem; border: 1px solid var(--color-light); border-radius: var(--border-radius); resize: vertical; min-height: 60px;"
+                                id="comment-${postId}"
+                            ></textarea>
+                            <button 
+                                onclick="createComment(${postId})" 
+                                class="btn btn-primary" 
+                                style="margin-top: 0.5rem; padding: 0.5rem 1rem;"
+                            >
+                                Comentar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            postElement.appendChild(commentsSection);
+        }
+
+        // Crear comentario usando tu endpoint
+        async function createComment(postId) {
+            const commentInput = document.getElementById(`comment-${postId}`);
+            const content = commentInput.value.trim();
+            
+            if (!content) {
+                alert('Por favor, escribe un comentario.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/comentarios`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        publicacion_id: postId,
+                        usuario_id: getCurrentUserId(),
+                        contenido: content
+                    })
+                });
+
+                if (response.ok) {
+                    commentInput.value = '';
+                    alert('¡Comentario guardado exitosamente!');
+                    toggleComments(postId); // Cerrar el formulario
+                } else {
+                    throw new Error('Error al crear el comentario');
+                }
+            } catch (error) {
+                console.error('Error creando comentario:', error);
+                alert('Error al crear el comentario. Inténtalo de nuevo.');
+            }
+        }
+
+        function sharePost(postId) {
+            console.log('Compartir post:', postId);
+            // Implementar lógica para compartir
+        }
+
+        function togglePostMenu(postId) {
+            console.log('Mostrar menú para post:', postId);
+            // Implementar menú de opciones del post
+        }
+    </script>
+</body>
+</html>

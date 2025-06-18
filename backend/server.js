@@ -6,6 +6,9 @@ const crypto = require("crypto");
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "../frontend")));
+app.get('/publicaciones', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/publicaciones.html'));
+});
 
 const connectionString = "server=localhost;Database=red_social;Trusted_Connection=Yes;Driver={SQL Server Native Client 11.0};";
 
