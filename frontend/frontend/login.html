@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Iniciar Sesión - Niilo</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .login-container {
+      max-width: 400px;
+      margin: 80px auto;
+      background-color: #f8f8f8;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .login-container h2 {
+      text-align: center;
+    }
+    .login-container input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 15px;
+    }
+    .login-container button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 10px;
+    }
+    .error-msg {
+      color: red;
+      text-align: center;
+      margin-top: 10px;
+    }
+    .login-container .register-link {
+      text-align: center;
+      margin-top: 15px;
+    }
+    .login-container .register-link a {
+      color: var(--color-primary, #6c63ff);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+  <h2>Iniciar Sesión</h2>
+  <form onsubmit="login(event)">
+    <input type="email" id="email" placeholder="Correo electrónico" required>
+    <input type="password" id="password" placeholder="Contraseña" required>
+    <button type="submit">Entrar</button>
+  </form>
+  <div class="error-msg" id="errorMsg"></div>
+  <div class="register-link">
+    ¿No tienes cuenta? <a href="registro.html">Regístrate</a>
+  </div>
+</div>
+
+
+  <script src="login.js"></script>
+</body>
+</html>

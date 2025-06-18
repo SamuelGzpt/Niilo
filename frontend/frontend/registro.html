@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro - Niilo</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .registro-container {
+      max-width: 450px;
+      margin: 80px auto;
+      background-color: #f8f8f8;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .registro-container h2 {
+      text-align: center;
+    }
+    .registro-container input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 15px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .registro-container button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 10px;
+      background-color: var(--color-primary, #6c63ff);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .registro-container button:hover {
+      background-color: #4e4ac6;
+    }
+    .registro-container .error-msg {
+      color: red;
+      text-align: center;
+      margin-top: 10px;
+    }
+    .registro-container .login-link {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .registro-container .login-link a {
+      color: var(--color-primary, #6c63ff);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="registro-container">
+    <h2>Crear Cuenta</h2>
+    <form onsubmit="registrar(event)">
+      <input type="text" id="nombre" placeholder="Nombre" required>
+      <input type="text" id="apellido" placeholder="Apellido" required>
+      <input type="email" id="email" placeholder="Correo electrónico" required>
+      <input type="password" id="password" placeholder="Contraseña" required>
+      <button type="submit">Registrarse</button>
+    </form>
+    <div class="error-msg" id="errorMsg"></div>
+    <div class="login-link">
+      ¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a>
+    </div>
+  </div>
+
+  <script>
+    async function registrar(event) {
+      event.preventDefault();
+
+      const nombre = document.getElementById("nombre").value;
+      const apellido = document.getElementById("apellido").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      const res = await fetch("/api/registro", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre, apellido, email, password })
+      });
+
+      if (res.ok) {
+        alert("Usuario creado con éxito");
+        window.location.href = "login.html";
+      } else {
+        const msg = await res.text();
+        document.getElementById("errorMsg").innerText = msg;
+      }
+    }
+  </script>
+</body>
+</html>
