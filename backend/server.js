@@ -11,28 +11,63 @@ app.get('/publicaciones', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/publicaciones.html'));
 });
 
-// Configuración de conexión con Windows Authentication
+// Configuración de conexión corregida para SQLEXPRESS
 const dbConfig = {
-    server: 'localhost', // o 'localhost\\SQLEXPRESS' si usas instancia nombrada
+    server: 'localhost\\SQLEXPRESS', // Especifica la instancia SQLEXPRESS
     database: 'red_social',
     options: {
         trustedConnection: true, // Windows Authentication
         encrypt: false, // Para conexiones locales
-        enableArithAbort: true
+        enableArithAbort: true,
+        trustServerCertificate: true // Añadido para evitar errores de certificado
+    },
+    pool: {
+        max: 10,
+        min: 0,
+        idleTimeoutMillis: 30000
     }
 };
 
-// Pool de conexiones global
+// Pool de conexiones global con mejor manejo de errores
 let poolPromise = new sql.ConnectionPool(dbConfig)
     .connect()
     .then(pool => {
-        console.log('✅ Conectado a SQL Server');
+        console.log('✅ Conectado a SQL Server (SQLEXPRESS)');
         return pool;
     })
     .catch(err => {
         console.error('❌ Error de conexión a la base de datos:', err);
+        console.log('\n🔧 Posibles soluciones:');
+        console.log('1. Verifica que SQL Server (SQLEXPRESS) esté ejecutándose');
+        console.log('2. Habilita TCP/IP en SQL Server Configuration Manager');
+        console.log('3. Reinicia el servicio SQL Server después de cambios');
+        console.log('4. Verifica que el puerto 1433 esté disponible');
         process.exit(1);
     });
+
+// Función para probar la conexión
+async function testConnection() {
+    try {
+        const pool = await poolPromise;
+        const result = await pool.request().query('SELECT 1 as test');
+        console.log('🔍 Test de conexión exitoso:', result.recordset[0]);
+        
+        // Verificar si las tablas existen
+        const tablesQuery = `
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_TYPE = 'BASE TABLE'
+        `;
+        const tables = await pool.request().query(tablesQuery);
+        console.log('📋 Tablas encontradas:', tables.recordset.map(t => t.TABLE_NAME));
+        
+    } catch (err) {
+        console.error('❌ Error en test de conexión:', err);
+    }
+}
+
+// Ejecutar test de conexión al iniciar
+testConnection();
 
 // Obtener publicaciones
 app.get("/api/publicaciones", async (req, res) => {
