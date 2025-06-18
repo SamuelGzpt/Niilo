@@ -30,6 +30,48 @@ app.get("/api/publicaciones", (req, res) => {
   });
 });
 
+// Obtener comentarios de una publicación
+app.get("/api/publicaciones/:publicacion_id/comentarios", (req, res) => {
+  const { publicacion_id } = req.params;
+  const query = `
+    SELECT c.id, c.contenido, c.fecha_comentario, u.nombre, u.apellido
+    FROM comentarios c
+    JOIN usuarios u ON c.usuario_id = u.id
+    WHERE c.publicacion_id = ?
+    ORDER BY c.fecha_comentario DESC
+  `;
+
+  sql.query(connectionString, query, [publicacion_id], (err, rows) => {
+    if (err) {
+      console.error("Error al obtener comentarios:", err);
+      return res.status(500).send("Error en la base de datos al obtener comentarios");
+    }
+    res.json(rows);
+  });
+});
+
+// Obtener likes de una publicación
+app.get("/api/publicaciones/:publicacion_id/likes", (req, res) => {
+  const { publicacion_id } = req.params;
+  const query = `
+    SELECT u.id AS usuario_id, u.nombre, u.apellido
+    FROM me_gusta mg
+    JOIN usuarios u ON mg.usuario_id = u.id
+    WHERE mg.publicacion_id = ?
+  `;
+
+  sql.query(connectionString, query, [publicacion_id], (err, users_liked) => {
+    if (err) {
+      console.error("Error al obtener likes:", err);
+      return res.status(500).send("Error en la base de datos al obtener likes");
+    }
+    res.json({
+      like_count: users_liked.length,
+      users_liked: users_liked
+    });
+  });
+});
+
 // Crear nueva publicación
 app.post("/api/publicaciones", (req, res) => {
   const { usuario_id, contenido } = req.body;
